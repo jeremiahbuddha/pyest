@@ -2,28 +2,7 @@
 
 from math import pi, sqrt, sin, cos, tan, acos, asin, atan, atan2
 from scipy import matrix
-
-def split_state(U):
-    """
-    Extracts X,Y,Z,dX,dY,dZ and magnitude r from the project
-    state vector U.
-
-    """
-    return U[0], U[1], U[2], U[3], U[4], U[5], r(U)
-
-def split_stn_coords(U):
-    """
-    Evaluates drag parameters for a particular value of the
-    state vector U.
-
-    """
-    if stn == '1':
-        return U[9], U[10], U[11]
-    elif stn == '2':
-        return U[12], U[13], U[14]
-    elif stn == '3':
-        return U[15], U[16], U[17]
-
+from pyest import *
 
 # ==============================================================================
 # Define the partial derivative H~-Matrix for the projects state
@@ -37,19 +16,11 @@ def Htilda_matrix(U,t,stn):
     # Calculate theta at current time
     theta = dTheta * t
 
-    # Get index (in state vector U) of current station
-    if stn == 1:
-       stn_indx = 9
-    elif stn == 2:
-       stn_indx = 12
-    elif stn == 3:
-       stn_indx = 15
-
     # Get the state elements in a more readable form
     X, Y, Z, dX, dY, dZ, r = split_state(U)
 
     # Get station coords 
-    Xs, Ys, Zs = get_stn_coords(U, stn)
+    Xs, Ys, Zs, stn_indx = split_stn_coords(U, stn)
 
     # Calulate range
     rng = sqrt(X**2 + Y**2 + Z**2 + Xs**2 + Ys**2 + Zs**2 \

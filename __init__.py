@@ -58,6 +58,26 @@ def r(vec):
                  float( vec[1]**2 ) +
                  float( vec[2]**2 ) )
 
+def split_state(U):
+    """
+    Extracts X,Y,Z,dX,dY,dZ and magnitude r from the project
+    state vector U.
+
+    """
+    return U[0], U[1], U[2], U[3], U[4], U[5], r(U)
+
+def split_stn_coords(U, stn):
+    """
+    Evaluates drag parameters for a particular value of the
+    state vector U.
+
+    """
+    if stn == 101:
+        return U[9], U[10], U[11], 9
+    elif stn == 337:
+        return U[12], U[13], U[14], 12
+    elif stn == 394:
+        return U[15], U[16], U[17], 15
 
 def acc_j2(U,comp):
     """
@@ -67,7 +87,6 @@ def acc_j2(U,comp):
         return (1 - 1.5*J2*(R/r(U))**2*(5*(U[2]/r(U))**2-1))
     elif comp =='z':
         return (1 - 1.5*J2*(R/r(U))**2*(5*(U[2]/r(U))**2-3))
-
 
 def rho_A(U):
     return rho_0*exp(-(r(U)-ref_r)/h_step)

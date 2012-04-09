@@ -4,14 +4,6 @@ from math import pi, sqrt, sin, cos, tan, acos, asin, atan, atan2
 from scipy import matrix
 from pyest import *
 
-def split_state(U):
-    """
-    Extracts X,Y,Z,dX,dY,dZ and magnitude r from the project
-    state vector U.
-
-    """
-    return U[0], U[1], U[2], U[3], U[4], U[5], r(U)
-
 def eval_drag(U):
     """
     Evaluates drag parameters for a particular value of the

@@ -8,14 +8,14 @@ with open('tracking_data.txt') as f:
 # Reformat data as nested python lists
 out = 'TRACKING_LIST = ['
 for line in tdata:
-    out+='\n    [{0}, {1}, {2}, {3}],'.format(line.split()[0],line.split()[1],
+    out+='\n    [{0}.0, {1}, {2}, {3}],'.format(line.split()[0],line.split()[1],
                                            line.split()[2],line.split()[3] )
 out += '\n    ]\n\n'
 
 # Reformat data as dictionary with time as key
 out += 'TRACKING_DICT = {'
 for line in tdata:
-    out+='\n    {0} : [{1}, {2}, {3}],'.format(line.split()[0],line.split()[1],
+    out+='\n    {0}.0 : [{1}, {2}, {3}],'.format(line.split()[0],line.split()[1],
                                            line.split()[2],line.split()[3] )
 out += '\n    }'
 
