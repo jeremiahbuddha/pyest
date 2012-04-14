@@ -68,7 +68,7 @@ def Htilda_matrix(U,t,stn):
 
     # dRng/Y
     Htilda[1, 1] = (dY + dTheta * Ys * sin(theta) - dTheta * Xs * cos(theta)) / rng \
-                   - dRng * (Y - Ys * cos(theta) + Xs * sin(theta)) / rng**2
+                   - dRng * (Y - Ys * cos(theta) - Xs * sin(theta)) / rng**2
 
     # dRng/Z
     Htilda[1, 2] = dZ / rng - dRng * (Z - Zs) / rng**2
