@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import scipy as sp
+import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import ode
 from pyest.integ import Udot, Htilda_matrix
@@ -9,6 +10,7 @@ from pyest import *
 
 # =============================================================================
 # =============================================================================
+# MAIN EXECUTABLE SCRIPT FOR PYEST PROJECT 
 
 # Set up the integrator (Runga-Kutta 8/5)
 eom = ode(Udot).set_integrator('dop853', atol=1.0E-12, rtol=1.0E-12)
@@ -25,20 +27,20 @@ observed = TRACKING_DICT
 computed = {}
 resids = {}
 
+# Initialize G and N matrices
+L = P0.I
+N = P0.I * x0
+#G = sp.zeros((18,18))
+#N = sp.zeros((18,1))
+
 # Start by accumulating the observation at t = 0
 start_stn = observed[0][0]
-start_y = sp.matrix( [ observed[0][1], observed[0][2] ] ).T
 start_Htilda = Htilda_matrix(ref_state0, 0, start_stn)
 start_computed = start_Htilda * sp.matrix(state0).T
-start_y = sp.matrix( [ observed[0][1] - float(start_computed[0]), observed[0][2] - float(start_computed[1]) ] ).T
-G = start_Htilda.T * W * start_Htilda
-N = start_Htilda.T * W * start_y
-
-##G = P0.I
-#G = sp.zeros( (18,18) )
-## This matrix will accumulate H.T * R.I * y
-##N = P0.I * x0
-#N = sp.zeros( (18,1) )
+start_y = sp.matrix( [ observed[0][1] - float(start_computed[0]), 
+                       observed[0][2] - float(start_computed[1]) ] ).T
+L = L + start_Htilda.T * W * start_Htilda
+N = N + start_Htilda.T * W * start_y
 
 while eom.successful() and eom.t < t_max:
     # Step state vector to current time
@@ -66,13 +68,22 @@ while eom.successful() and eom.t < t_max:
         resids[this_t] = [observed[this_t][1] - computed[this_t][0],
                           observed[this_t][2] - computed[this_t][1]]
 
-        this_y = sp.matrix([ float(resids[this_t][0]),float(resids[this_t][1] )]).T
+        this_y = sp.matrix([float(resids[this_t][0]),
+                            float(resids[this_t][1] )]).T
         H = Htilda * STM
-        G = G + H.T * W * H
+        L = L + H.T * W * H
         N = N + H.T * W * this_y
 
-
-print N
+l = np.linalg.cholesky(L)
+P = (l.I).T * l.I
+x_hat = P * N
+print x_hat
+#P = G.I 
+#print P[0,:]
+#print P[:,0].T
+#g = np.linalg.cholesky(G)
+#print (g.I).T * g.I * N
+#print P * N 
 exit()
 
 # Print the State and STM at 18340 seconds
