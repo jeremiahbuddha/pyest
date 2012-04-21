@@ -4,7 +4,7 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from scipy.integrate import ode
 from pyest.integ import Udot, Htilda_matrix
-from pyest.data import TRACKING_DICT
+from pyest.data import TRACKING_DICT, x0, P0, W
 from pyest import *
 
 # =============================================================================
@@ -24,6 +24,22 @@ states = {}
 observed = TRACKING_DICT
 computed = {}
 resids = {}
+
+# Start by accumulating the observation at t = 0
+start_stn = observed[0][0]
+start_y = sp.matrix( [ observed[0][1], observed[0][2] ] ).T
+start_Htilda = Htilda_matrix(ref_state0, 0, start_stn)
+start_computed = start_Htilda * sp.matrix(state0).T
+start_y = sp.matrix( [ observed[0][1] - float(start_computed[0]), observed[0][2] - float(start_computed[1]) ] ).T
+G = start_Htilda.T * W * start_Htilda
+N = start_Htilda.T * W * start_y
+
+##G = P0.I
+#G = sp.zeros( (18,18) )
+## This matrix will accumulate H.T * R.I * y
+##N = P0.I * x0
+#N = sp.zeros( (18,1) )
+
 while eom.successful() and eom.t < t_max:
     # Step state vector to current time
     this_t = eom.t+dt
@@ -38,15 +54,26 @@ while eom.successful() and eom.t < t_max:
         this_stn = observed[this_t][0]
         Htilda = Htilda_matrix(this_all, this_t, this_stn)
 
-        state = this_all[0:18] 
-        state_mtrx = sp.matrix(state).T
+        state_list = this_all[0:18] 
+        state = sp.matrix(state_list).T
 
-        computed[this_t] = [Htilda[0] * state_mtrx, # Range 
-                            Htilda[1] * state_mtrx] # Range-rate
+        STM_list = this_all[18:]
+        STM = sp.matrix(STM_list).reshape(18,18)
+ 
+        computed[this_t] = [Htilda[0] * state, # Range 
+                            Htilda[1] * state] # Range-rate
 
         resids[this_t] = [observed[this_t][1] - computed[this_t][0],
                           observed[this_t][2] - computed[this_t][1]]
 
+        this_y = sp.matrix([ float(resids[this_t][0]),float(resids[this_t][1] )]).T
+        H = Htilda * STM
+        G = G + H.T * W * H
+        N = N + H.T * W * this_y
+
+
+print N
+exit()
 
 # Print the State and STM at 18340 seconds
 end_state = states[18340][:18]

@@ -1,6 +1,11 @@
 
 from scipy import matrix, eye
 
+range_sigma = 0.01 # meters
+range_rate_sigma = 0.001 # meters/sec
+
+W = matrix( [ [ 1.0 / range_sigma**2 , 0.0                       ],
+              [ 0.0                  , 1.0 / range_rate_sigma**2 ] ] )
 
 APVALS = matrix( [      
     0.0E+00, # x
@@ -46,5 +51,5 @@ APCOV = matrix( [
     1.0E+06, # z3 
     ]).T
 
-P0 = eye(18) * APCOV_VALS
+P0 = eye(18) * APCOV
  
