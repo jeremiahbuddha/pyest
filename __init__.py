@@ -27,28 +27,27 @@ stn337 = [3860910.0, 3238490.0, 3898094.0]
 stn394 = [549505.0,-1380872.0, 6182197.0]
 
 # Initial State (units in meters and secons)
-state0 = [757700.0,  # X
-          5222607.0, # Y
-          4851500.0, # Z
-          2213.21,   # dX
-          4678.34,   # dY 
-         -5371.30,   # dZ
-          mu,        # mu
-          J2,        # J2
-          Cd,        # Cd
-          stn101[0], # X_1
-          stn101[1], # Y_1
-          stn101[2], # Z_1
-          stn337[0], # X_1
-          stn337[1], # Y_1
-          stn337[2], # Z_1
-          stn394[0], # X_1
-          stn394[1], # Y_1
-          stn394[2], # Z_1
-          ]
+X0 = [757700.0,  # X
+      5222607.0, # Y
+      4851500.0, # Z
+      2213.21,   # dX
+      4678.34,   # dY 
+     -5371.30,   # dZ
+      mu,        # mu
+      J2,        # J2
+      Cd,        # Cd
+      stn101[0], # X_1
+      stn101[1], # Y_1
+      stn101[2], # Z_1
+      stn337[0], # X_1
+      stn337[1], # Y_1
+      stn337[2], # Z_1
+      stn394[0], # X_1
+      stn394[1], # Y_1
+      stn394[2], # Z_1
+      ]
 
-# Initial STM is just identity, arranged into a list
-stm0 = sp.identity(18, float).reshape(1,324).tolist()[0]
+X0 = sp.matrix(X0).T
 
 # ==============================================================================
 # Project Functions
