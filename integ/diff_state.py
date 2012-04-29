@@ -6,8 +6,6 @@ from pyest.data import *
 from pyest.integ import A_matrix
 from scipy import matrix, array
 
-
-
 # ==============================================================================
 # ==============================================================================
 # Define the differential state vector and stm

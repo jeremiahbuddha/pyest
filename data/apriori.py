@@ -4,6 +4,12 @@ from scipy import matrix, eye
 # ==============================================================================
 # Project Constants
 
+# Earth constants
+dTheta = 7.2921158553E-5 # rad / s
+J2 = 1.082626925638815E-3
+mu = 3.986004415E+14  # m**3 / s**2
+R = 6378136.3 # m
+
 # Drag Params
 Cd = 2.0 # unitless
 A = 3.0 # m**2
@@ -12,12 +18,6 @@ rho_0 = 3.614E-13 # kg / m**3
 ref_r = 7078136.3 # m
 h_step = 88667.0 # m
 drag_C = 0.5 * Cd * (A / m)
-
-# Other constants
-dTheta = 7.2921158553E-5 # rad / s
-J2 = 1.082626925638815E-3
-mu = 3.986004415E+14  # m**3 / s**2
-R = 6378136.3 # m
 
 # Tracking station coordinates (ECF)
 stn101 = [-5127510.0,-3794160.0, 0.0]
@@ -79,7 +79,7 @@ INITIAL_x0 = matrix( [
     ]).T
 
 
-scl = 2.0
+scl = 1.0
 
 APCOV = matrix( [ 
     scl*1.0E+06, # x

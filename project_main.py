@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import os
 import scipy as sp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +9,15 @@ from pyest.integ import Udot, Htilda_matrix
 #from pyest.data import TRACKING_DICT, INITIAL_X0, INITIAL_x0, INITIAL_P0, W
 from pyest.data import *
 from pyest import *
+from pyest.results import *
+
+DEBUG = 1
+DEBUG_FILE = 'log.txt'
+
+if DEBUG:
+    if os.path.exists(DEBUG_FILE):
+        os.remove(DEBUG_FILE)
+   
 
 # =============================================================================
 # =============================================================================
@@ -19,6 +29,58 @@ OBS = TRACKING_DICT
 
 # ==============================================================================
 # FUNCTION DEFINITIONS
+
+def print_iteration_debug( X, stm, comp, resids, Htilda, H, iter_num):
+
+    state_vars = [ 'X  ', 'Y  ', 'Z  ', 'dX ', 'dY ', 'dZ ',
+                   'mu ', 'J_2', 'C_d', 'X_1', 'Y_1', 'Z_1',
+                   'X_2', 'Y_2', 'Z_2', 'X_3', 'Y_3', 'Z_3' ]
+
+
+    out = "### This is debug print for iter {0} of pyesti\n".format(iter_num)
+
+    # Run tests on State integration
+    out += "\n### Position / Velocity Test"
+    for time in [0,20,40,60,80,100,120]:
+        ref_pos_vel = P1_POS_VEL_T_20_120[time]
+        est_pos_vel = X[time]
+        out += 'POSITION AND VELOCITY @ t={0}\n'.format(time)
+        var = 0
+        for ref,est in zip(ref_pos_vel,est_pos_vel):
+            out += "{0}: ".format(state_vars[var])
+            ###out += " REF: {0:2.16e}".format(true)
+            ###out += " EST: {0:2.16e}".format(est)
+            per = abs( float(ref) - float(est) ) / abs(float(ref))
+            out += "{0:3.8f} % diff\n".format(per*100.0)
+            var += 1
+
+    # Run tests on STM
+    out += "\n### State Transition Matrix Test"
+    for time in [20,18340]:
+        ref_stm = P1_PHI_T_20_18340[time]
+        est_stm = stm[time]
+        out += '\n### STM @ t={0}'.format(time)
+        for var in range(len(ref_stm)):
+            ref = ref_stm[var]
+            est = est_stm[var]
+            # Make sure I don't divide by zero
+            if ref == 0:
+                out += "\nref = 0.0, est={0:2.3e}".format(est)
+            else:
+                per = abs( ref - est ) / abs(ref) * 100.0
+                out += "\n{0:3.2f} % diff".format(per)
+
+            if per > 5.0:
+                out += " ... ref: {0:2.12e}, est: {1:2.12e}".format(ref,est)
+
+
+    if os.path.exists(DEBUG_FILE):
+        os.remove(DEBUG_FILE)
+
+    with open(DEBUG_FILE,'w') as f:
+        f.writelines(out)
+
+
 def get_initial_params(X0, P0, x0):
     """
     Generate t=0 values for a new iteration from an initial state, covariance
@@ -84,7 +146,7 @@ def iterate(X0, P0, x0):
         
         this_stm_list = this_all[18:]
         this_stm = sp.matrix(this_stm_list).reshape(18,18)
-        stm[this_t] = this_stm
+        stm[this_t] = this_stm_list
 
         # If there is a measurement at the current time, then process it.
         if this_t in OBS.keys():
@@ -121,8 +183,18 @@ def iterate(X0, P0, x0):
     # Solve the normal equations for best estimate of X
     x_hat = P * N
  
-    print "### x_hat"
-    print x_hat
+    #print "### x_hat"
+    #print x_hat
+#    i = 1
+#    for true, est in zip(P1_XHAT,x_hat.tolist()):
+#        print "Parameter #{0}".format(i)
+#        print "TRUE: {0:2.16e}".format(true[0])
+#        print "EST : {0:2.16e}".format(est[0])
+#        per = abs( float(true[0]) - float(est[0]) ) / abs(float(true[0]))
+#        print "PERCENT DIFF:{0:3.2f}\n".format(per*100.0)
+#        i += 1
+#    exit()
+
 #    print "### SUM: H.T * W * H"  
 #    print L
 #    print "### SUM: H.T * W * y" 
@@ -132,6 +204,9 @@ def iterate(X0, P0, x0):
     new_X = X0 + x_hat
     new_P = P
     new_x = x0 - x_hat
+
+    if DEBUG:
+        print_iteration_debug(X, stm, comp, resids, Htilda, H, 1)
 
     return new_X, new_P, new_x, resids
 
@@ -200,13 +275,13 @@ X1, P1, x1, resids1 = iterate(INITIAL_X0, INITIAL_P0, INITIAL_x0)
 rng_rms, dRng_rms = plot_resids(resids1, title="Residuals (obs - com) for Iter 1")
 
 ## Second fit
-X2, P2, x2, resids2 = iterate(X1, INITIAL_P0, x1)
+#X2, P2, x2, resids2 = iterate(X1, INITIAL_P0, x1)
 # Plot the residuals
-rng_rms, dRng_rms = plot_resids(resids2, title="Residuals (obs - com) for Iter 2")
+#rng_rms, dRng_rms = plot_resids(resids2, title="Residuals (obs - com) for Iter 2")
 
 ## Third fit
-X3, P3, x3, resids3 = iterate(X2, INITIAL_P0, x2)
+#X3, P3, x3, resids3 = iterate(X2, INITIAL_P0, x2)
 ## Plot the residuals
-rng_rms, dRng_rms = plot_resids(resids3, title="Residuals (obs - com) for Iter 3")
+#rng_rms, dRng_rms = plot_resids(resids3, title="Residuals (obs - com) for Iter 3")
 
 raw_input("Press enter to exit")
