@@ -8,6 +8,7 @@ from scipy import matrix, eye
 dTheta = 7.2921158553E-5 # rad / s
 J2 = 1.082626925638815E-3
 mu = 3.986004415E+14  # m**3 / s**2
+#mu = 3.986004414999999E+14
 R = 6378136.3 # m
 
 # Drag Params
@@ -17,7 +18,7 @@ m = 970.0 # kg
 rho_0 = 3.614E-13 # kg / m**3
 ref_r = 7078136.3 # m
 h_step = 88667.0 # m
-drag_C = 0.5 * Cd * (A / m)
+drag_C = (1.0 / 2.0) * Cd * (A / m)
 
 # Tracking station coordinates (ECF)
 stn101 = [-5127510.0,-3794160.0, 0.0]
