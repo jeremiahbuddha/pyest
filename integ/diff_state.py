@@ -2,6 +2,7 @@
 
 import sys
 from pyest import *
+from pyest.data import *
 from pyest.integ import A_matrix
 from scipy import matrix, array
 

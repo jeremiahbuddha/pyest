@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import ode
 from pyest.integ import Udot, Htilda_matrix
-from pyest.data import TRACKING_DICT, x0, P0, W
+#from pyest.data import TRACKING_DICT, INITIAL_X0, INITIAL_x0, INITIAL_P0, W
+from pyest.data import *
 from pyest import *
 
 # =============================================================================
@@ -27,7 +28,7 @@ def get_initial_params(X0, P0, x0):
     X0_list = X0.T.tolist()[0]
     STM0 = sp.matrix(sp.eye(18))
     STM0_list = sp.eye(18).reshape(1,324).tolist()[0]
-
+    
     # Accumulate measurement at t=0
     obs0 = OBS[0]
     stn0 = obs0[0]
@@ -37,8 +38,12 @@ def get_initial_params(X0, P0, x0):
                obs0[2] - float(comp0[1]) ]
     y0 = sp.matrix([resid0]).T
     H0 = Htilda0 * STM0
+
+#    L0 = H0.T * W * H0
+#    N0 = H0.T * W * y0
+
     L0 = P0.I + H0.T * W * H0
-    N0 = H0.T * W * y0
+    N0 = P0.I * x0 + H0.T * W * y0
 
     # Initialize the integrator
     eom = ode(Udot).set_integrator('dop853', atol=1.0E-12, rtol=1.0E-12)
@@ -113,10 +118,17 @@ def iterate(X0, P0, x0):
     # Invert the information matrix using cholesky decomposition
     L_ = np.linalg.cholesky(L)
     P = (L_.I).T * L_.I
-
     # Solve the normal equations for best estimate of X
     x_hat = P * N
-    
+ 
+    print "### x_hat"
+    print x_hat
+#    print "### SUM: H.T * W * H"  
+#    print L
+#    print "### SUM: H.T * W * y" 
+#    print N
+#    exit()
+ 
     new_X = X0 + x_hat
     new_P = P
     new_x = x0 - x_hat
@@ -156,7 +168,6 @@ def plot_resids(resids, title = "Residuals (obs - com)"):
 
     # Show figure
     resid_fig.show()
-    raw_input("Press 'Enter' to exit")
 
     return rng_rms, dRng_rms
 
@@ -180,22 +191,22 @@ def print_state(X, time):
             end_STM[indx+3],end_STM[indx+4],end_STM[indx+5],
             end_STM[indx+6],end_STM[indx+7],end_STM[indx+8])
 
-
-
 # ==============================================================================
 # RUN THE BATCH FILTER
 
 # The first fit uses the apriori vals / covariance
-X1, P1, x1, resids1 = iterate(X0, P0, x0)
+X1, P1, x1, resids1 = iterate(INITIAL_X0, INITIAL_P0, INITIAL_x0)
 # Plot the residuals
 rng_rms, dRng_rms = plot_resids(resids1, title="Residuals (obs - com) for Iter 1")
 
 ## Second fit
-#X2, P2, x2, resids2 = iterate(X1, P1, x1)
+X2, P2, x2, resids2 = iterate(X1, INITIAL_P0, x1)
 # Plot the residuals
-#rng_rms, dRng_rms = plot_resids(resids2, title="Residuals (obs - com) for Iter 2")
+rng_rms, dRng_rms = plot_resids(resids2, title="Residuals (obs - com) for Iter 2")
 
 ## Third fit
-#X3, P3, x3, resids3 = iterate(X2, P2, x2)
+X3, P3, x3, resids3 = iterate(X2, INITIAL_P0, x2)
 ## Plot the residuals
-#rng_rms, dRng_rms = plot_resids(resids3, title="Residuals (obs - com) for Iter 3")
+rng_rms, dRng_rms = plot_resids(resids3, title="Residuals (obs - com) for Iter 3")
+
+raw_input("Press enter to exit")

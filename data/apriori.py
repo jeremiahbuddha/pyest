@@ -1,13 +1,63 @@
 
 from scipy import matrix, eye
 
+# ==============================================================================
+# Project Constants
+
+# Drag Params
+Cd = 2.0 # unitless
+A = 3.0 # m**2
+m = 970.0 # kg
+rho_0 = 3.614E-13 # kg / m**3
+ref_r = 7078136.3 # m
+h_step = 88667.0 # m
+drag_C = 0.5 * Cd * (A / m)
+
+# Other constants
+dTheta = 7.2921158553E-5 # rad / s
+J2 = 1.082626925638815E-3
+mu = 3.986004415E+14  # m**3 / s**2
+R = 6378136.3 # m
+
+# Tracking station coordinates (ECF)
+stn101 = [-5127510.0,-3794160.0, 0.0]
+stn337 = [3860910.0, 3238490.0, 3898094.0]
+stn394 = [549505.0,-1380872.0, 6182197.0]
+
+# ==============================================================================
+# PROJECT MEASUREMENT COVARIANCE
 range_sigma = 0.01 # meters
 range_rate_sigma = 0.001 # meters/sec
 
 W = matrix( [ [ 1.0 / range_sigma**2 , 0.0                       ],
               [ 0.0                  , 1.0 / range_rate_sigma**2 ] ] )
 
-APVALS = matrix( [      
+# ==============================================================================
+# PROJECT STATE AND STATE COVARIANCE
+
+# Initial State (units in meters and secons)
+INITIAL_X0 = matrix([
+      757700.0,  # X
+      5222607.0, # Y
+      4851500.0, # Z
+      2213.21,   # dX
+      4678.34,   # dY 
+     -5371.30,   # dZ
+      mu,        # mu
+      J2,        # J2
+      Cd,        # Cd
+      stn101[0], # X_1
+      stn101[1], # Y_1
+      stn101[2], # Z_1
+      stn337[0], # X_1
+      stn337[1], # Y_1
+      stn337[2], # Z_1
+      stn394[0], # X_1
+      stn394[1], # Y_1
+      stn394[2], # Z_1
+      ]).T
+
+INITIAL_x0 = matrix( [      
     0.0E+00, # x
     0.0E+00, # y
     0.0E+00, # z 
@@ -28,9 +78,8 @@ APVALS = matrix( [
     0.0E+00, # z3 
     ]).T
 
-x0 = APVALS
 
-scl = 1.0
+scl = 2.0
 
 APCOV = matrix( [ 
     scl*1.0E+06, # x
@@ -53,6 +102,6 @@ APCOV = matrix( [
     scl*1.0E+06, # z3 
     ]).T
 
-P0 = matrix(eye(18))
+INITIAL_P0 = matrix(eye(18))
 for i in range(18):
-    P0[i,i] = APCOV[i]
+    INITIAL_P0[i,i] = APCOV[i]

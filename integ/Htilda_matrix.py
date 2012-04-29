@@ -2,6 +2,7 @@
 
 from math import pi, sqrt, sin, cos, tan, acos, asin, atan, atan2
 from scipy import matrix
+from pyest.data import *
 from pyest import *
 
 # ==============================================================================
