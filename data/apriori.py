@@ -5,10 +5,9 @@ from scipy import matrix, eye
 # Project Constants
 
 # Earth constants
-dTheta = 7.2921158553E-5 # rad / s
+dTheta = 7.29211585530066E-5
 J2 = 1.082626925638815E-3
 mu = 3.986004415E+14  # m**3 / s**2
-#mu = 3.986004414999999E+14
 R = 6378136.3 # m
 
 # Drag Params

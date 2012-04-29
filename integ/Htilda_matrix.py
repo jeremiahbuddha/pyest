@@ -34,7 +34,7 @@ def Htilda_matrix(U,t,stn):
            (dX * Ys - dY * Xs) * sin(theta) + \
            dTheta * (X * Ys - Y * Xs) * cos(theta) - dZ * Zs) / rng
 
-    # Most of the A-matrix are zero's. Define a matrix of all zero's here, and
+    # Most of the Htilda-matrix are zero's. Define a matrix of all zero's here, and
     # then fill in the non-zero terms below.
     Htilda = sp.zeros((2, 18), float)
 

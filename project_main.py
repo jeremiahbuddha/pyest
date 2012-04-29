@@ -42,14 +42,15 @@ def get_initial_params(X0, P0, x0):
     y0 = sp.matrix([resid0]).T
     H0 = Htilda0 * STM0
 
-#    L0 = H0.T * W * H0
-#    N0 = H0.T * W * y0
+    # Sum matrices without apriori's (to check against solutions) 
+    ### L0 = H0.T * W * H0
+    ### N0 = H0.T * W * y0
 
     L0 = P0.I + H0.T * W * H0
     N0 = P0.I * x0 + H0.T * W * y0
 
     # Initialize the integrator
-    eom = ode(Udot).set_integrator('dop853', atol=1.0E-9, rtol=1.0E-9)
+    eom = ode(Udot).set_integrator('dop853', atol=1.0E-10, rtol=1.0E-9)
     eom.set_initial_value(X0_list + STM0_list, 0)
 
     return [STM0, comp0, resid0, Htilda0, H0, L0, N0, eom]
@@ -124,18 +125,6 @@ def iterate(X0, P0, x0):
     # Solve the normal equations for best estimate of X
     x_hat = P * N
  
-    #print "### x_hat"
-    #print x_hat
-#    i = 1
-#    for true, est in zip(P1_XHAT,x_hat.tolist()):
-#        print "Parameter #{0}".format(i)
-#        print "TRUE: {0:2.16e}".format(true[0])
-#        print "EST : {0:2.16e}".format(est[0])
-#        per = abs( float(true[0]) - float(est[0]) ) / abs(float(true[0]))
-#        print "PERCENT DIFF:{0:3.2f}\n".format(per*100.0)
-#        i += 1
-#    exit()
-
 #    print "### SUM: H.T * W * H"  
 #    print L
 #    print "### SUM: H.T * W * y" 
@@ -184,25 +173,52 @@ def plot_resids(resids, title = "Residuals (obs - com)"):
 
     return rng_rms, dRng_rms
 
-def print_state(X, time):
+def print_state(X):
+    """
+    Pretty-print a matrix() 18x1 state.
 
-    state = X[time]
-    state_vars = [ 'X  ', 'Y  ', 'Z  ', 'dX ', 'dY ', 'dZ ',
-                   'mu ', 'J_2', 'C_d', 'X_1', 'Y_1', 'Z_1',
-                   'X_2', 'Y_2', 'Z_2', 'X_3', 'Y_3', 'Z_3' ]
+    """
+    out = ''
+    for coord in range(18):
+        out += "{0}".format(STATE_VARS[coord])
+        val = float(X[coord])
+        out += " {0: 2.4e}\n".format(val)
 
-    print "\n### The state at t={0}".format(time)
-    for var,val in zip(state_vars,state):
-        print "   {0}: {1}".format(var,val)
+    print out
 
-    print "\n### The STM at t={0}".format(time)
-    row_start = range(0,162,18)
-    for indx in row_start:
-        print "   {0:+0.4e},{1:+0.4e},{2:+0.4e},{3:+0.4e},{4:+0.4e},"+\
-             "{5:+0.4e},{6:+0.4e},{7:+0.4e},{8:+0.4e}".format(
-            end_STM[indx],end_STM[indx+1],end_STM[indx+2],
-            end_STM[indx+3],end_STM[indx+4],end_STM[indx+5],
-            end_STM[indx+6],end_STM[indx+7],end_STM[indx+8])
+def print_covariance(P):
+    """
+    Pretty-print a matrix() 18x18 covariance.
+
+    """
+    def b(string):
+        """
+        Turns a given string blue.
+
+        """
+        return "\033[94m{0}\033[0m".format(string)
+
+    out = "     "
+    # Print out header with state variables
+    for var in STATE_VARS:
+        out += "{0:9s}  ".format(var)
+
+    # Print out correlation / covariance matrix    
+    for row in range(18):
+        out += "\n{0:3s} ".format(STATE_VARS[row])
+        for col in range(18):
+            # Print correlations on lower diagnal
+            if col < row:
+                out += "{0: 2.2e}, ".format(float(P[row,col]/(sqrt(P[row,row]) * sqrt(P[col,col]) )))
+            # Highlight variances in blue
+            elif row == col:
+                out += b("{0: 2.2e}, ".format(float(P[row,col])))
+            else:
+                out += "{0: 2.2e}, ".format(float(P[row,col]))
+    
+    out += "\n"
+
+    print out
 
 
 if __name__ == '__main__':
@@ -210,21 +226,34 @@ if __name__ == '__main__':
     # ==============================================================================
     # RUN THE BATCH FILTER
 
-
-
     # The first fit uses the apriori vals / covariance
-    X1, P1, x1, resids1 = iterate(INITIAL_X0, INITIAL_P0, INITIAL_x0)
+    X1, P1, x1, resids1, TEST_DATA = iterate(INITIAL_X0, INITIAL_P0, INITIAL_x0)
     # Plot the residuals
     rng_rms, dRng_rms = plot_resids(resids1, title="Residuals (obs - com) for Iter 1")
 
+    print "\n### x_hat for iteration 1:"
+    print_state(TEST_DATA[0])
+    print "\n### Cov for iteration 1:"
+    print_covariance(P1)
+    
     ## Second fit
-    #X2, P2, x2, resids2 = iterate(X1, INITIAL_P0, x1)
+    X2, P2, x2, resids2, TEST_DATA = iterate(X1, INITIAL_P0, x1)
     # Plot the residuals
-    #rng_rms, dRng_rms = plot_resids(resids2, title="Residuals (obs - com) for Iter 2")
+    rng_rms, dRng_rms = plot_resids(resids2, title="Residuals (obs - com) for Iter 2")
+
+    print "x_hat for iteration 2:"
+    print_state(TEST_DATA[0])
+    print "Cov for iteration 2:"
+    print_covariance(P2)
 
     ## Third fit
-    #X3, P3, x3, resids3 = iterate(X2, INITIAL_P0, x2)
+    X3, P3, x3, resids3, TEST_DATA = iterate(X2, INITIAL_P0, x2)
     ## Plot the residuals
-    #rng_rms, dRng_rms = plot_resids(resids3, title="Residuals (obs - com) for Iter 3")
+    rng_rms, dRng_rms = plot_resids(resids3, title="Residuals (obs - com) for Iter 3")
+
+    print "x_hat for iteration 3:"
+    print_state(TEST_DATA[0])
+    print "Cov for iteration 3:"
+    print_covariance(P3)
 
     raw_input("Press enter to exit")

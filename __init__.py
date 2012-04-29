@@ -8,9 +8,9 @@ from pyest.data import *
 # Project Functions
 
 def r(vec):
-    return sqrt( float( vec[0]**2 ) +
-                 float( vec[1]**2 ) +
-                 float( vec[2]**2 ) )
+    return sqrt( float(vec[0])**2  +
+                 float(vec[1])**2  +
+                 float(vec[2])**2  )
 
 def split_state(U):
     """
