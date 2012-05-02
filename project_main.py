@@ -18,11 +18,12 @@ from pyest.test import *
 T_END = 18340.0
 T_DELTA = 20.0
 OBS = TRACKING_DICT
+I = matrix(eye(18))
 
 # ==============================================================================
 # FUNCTION DEFINITIONS
 
-def get_initial_params(X0, P0, x0):
+def initialize_batch(X0, P0, x0):
     """
     Generate t=0 values for a new iteration from an initial state, covariance
     and a-priori estimate.
@@ -35,8 +36,8 @@ def get_initial_params(X0, P0, x0):
     # Accumulate measurement at t=0
     obs0 = OBS[0]
     stn0 = obs0[0]
-    Htilda0 = Htilda_matrix(X0_list, 0, stn0)
-    comp0 = Htilda0 * X0
+    comp0, Htilda0 = Htilda_matrix(X0_list, 0, stn0)
+    ###comp0 = Htilda0 * X0
     resid0 = [ obs0[1] - float(comp0[0]),
                obs0[2] - float(comp0[1]) ]
     y0 = sp.matrix([resid0]).T
@@ -55,10 +56,10 @@ def get_initial_params(X0, P0, x0):
 
     return [STM0, comp0, resid0, Htilda0, H0, L0, N0, eom]
 
-def iterate(X0, P0, x0):
+def iterate_batch(X0, P0, x0):
 
     # Get t=0 parameters for this iteration
-    IC = get_initial_params(X0, P0, x0)
+    IC = initialize_batch(X0, P0, x0)
 
     # Initialize container arrays - I am probably storing more values
     # than I really need to
@@ -97,11 +98,11 @@ def iterate(X0, P0, x0):
 
             # Calculate predicted observations
             this_stn = OBS[this_t][0]
-            this_Htilda = Htilda_matrix(this_X, this_t, this_stn)
+            this_comp, this_Htilda = Htilda_matrix(this_X, this_t, this_stn)
             this_H = this_Htilda * this_stm
 
-            this_comp = [float(this_Htilda[0] * this_X), # Range 
-                         float(this_Htilda[1] * this_X)] # Range-rate
+            #this_comp = [float(this_Htilda[0] * this_X), # Range 
+            #             float(this_Htilda[1] * this_X)] # Range-rate
 
             this_resid = [ this_obs[1] - this_comp[0],
                            this_obs[2] - this_comp[1]]
@@ -136,6 +137,100 @@ def iterate(X0, P0, x0):
     new_x = x0 - x_hat
 
     return new_X, new_P, new_x, resids, [x_hat, X, stm, comp, resids, Htilda, H]
+
+def initialize_sequential(X_bar0, P_bar0, x_bar0):
+    """
+    Generate t=0 values for a new iteration from an initial state, covariance
+    and a-priori estimate.
+    """
+    # Get initial state and STM and initialize integrator
+    X_bar0_list = X_bar0.T.tolist()[0]
+    STM0 = sp.matrix(sp.eye(18))
+    STM0_list = sp.eye(18).reshape(1,324).tolist()[0]
+
+    eom = ode(Udot).set_integrator('dop853', atol=1.0E-10, rtol=1.0E-9)
+    eom.set_initial_value(X0_list + STM0_list, 0)
+
+    # Perform measurement update for t=0 observation
+    obs0 = OBS[0]
+    stn0 = obs0[0]
+    y0, Htilda0 = Htilda_matrix(X_bar0_list, 0, stn0)
+    comp0 = Htilda0 * X_bar0
+    resid0 = [ obs0[1] - float(comp0[0]),
+               obs0[2] - float(comp0[1]) ]
+    y0 = sp.matrix([resid0]).T
+    K0 = P_bar0 * Htilda0.T * (Htilda0 * P_bar0 * Htilda0.T + W.I).I
+    x_hat0 = x_bar0 + K0 * (y0 - Htilda0 * x_bar0)
+    P0 = (I - K0 * Htilda0) * P_bar0 
+
+    return [STM0, comp0, resid0, Htilda0, x_hat0, P0, eom]
+
+
+def iterate_sequential(X0, P0, x0):
+
+    # Get t=0 parameters for this iteration
+    IC = get_initial_params(X0, P0, x0)
+
+    # Initialize container arrays
+    X      = { 0 : X0 }
+    stm    = { 0 : IC[0] }
+    comp   = { 0 : IC[1] }
+    resids = { 0 : IC[2] }
+    Htilda = { 0 : IC[3] }
+    x_hats = { 0 : IC[4] }
+    Ps     = { 0 : IC[5] }
+    eom    = IC[6]
+
+    # Integrate from t=0 to t=T_END
+    while eom.successful() and eom.t < T_END:
+
+        # Step state vector to current time
+        this_t = eom.t + T_DELTA
+        eom.integrate(this_t)
+
+        # Split out state vector and STM for this time
+        this_all = eom.y.tolist()
+
+        this_X_list = this_all[0:18]
+        this_X = sp.matrix(this_X_list).T
+        X[this_t] = this_X
+
+        this_stm_list = this_all[18:]
+        this_stm = sp.matrix(this_stm_list).reshape(18,18)
+        stm[this_t] = this_stm
+
+        # If there is a measurement at the current time, then process it.
+        if this_t in OBS.keys():
+ 
+            prev_t = this_t - T_DELTA
+
+            this_obs = OBS[this_t]
+          
+            # Perform time update
+            stm_n_nm1 = this_stm * stm[prev_t].I
+            this_x_bar = stm_n_nm1 * x_hats[prev_t]
+            this_P_bar = stm_n_nm1 * Ps[prev_t] * stm_n_nm1.T
+
+            
+
+            # Calculate predicted observations
+            this_stn = OBS[this_t][0]
+            this_Htilda = Htilda_matrix(this_X, this_t, this_stn)
+            this_H = this_Htilda * this_stm
+
+            this_comp = [float(this_Htilda[0] * this_X), # Range 
+                         float(this_Htilda[1] * this_X)] # Range-rate
+
+            this_resid = [ this_obs[1] - this_comp[0],
+                           this_obs[2] - this_comp[1]]
+
+            this_y = sp.matrix([this_resid]).T
+
+            # Accumulate matrices                       
+            L = L + this_H.T * W * this_H
+            N = N + this_H.T * W * this_y
+
+
 
 def plot_resids(resids, title = "Residuals (obs - com)"):
 
