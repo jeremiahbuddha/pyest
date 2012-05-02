@@ -35,16 +35,11 @@ def get_initial_params(X0, P0, x0):
     # Accumulate measurement at t=0
     obs0 = OBS[0]
     stn0 = obs0[0]
-    Htilda0 = Htilda_matrix(X0_list, 0, stn0)
-    comp0 = Htilda0 * X0
+    comp0, Htilda0 = Htilda_matrix(X0_list, 0, stn0)
     resid0 = [ obs0[1] - float(comp0[0]),
                obs0[2] - float(comp0[1]) ]
     y0 = sp.matrix([resid0]).T
     H0 = Htilda0 * STM0
-
-    # Sum matrices without apriori's (to check against solutions) 
-    ### L0 = H0.T * W * H0
-    ### N0 = H0.T * W * y0
 
     L0 = P0.I + H0.T * W * H0
     N0 = P0.I * x0 + H0.T * W * y0
@@ -97,14 +92,11 @@ def iterate(X0, P0, x0):
 
             # Calculate predicted observations
             this_stn = OBS[this_t][0]
-            this_Htilda = Htilda_matrix(this_X, this_t, this_stn)
+            this_comp, this_Htilda = Htilda_matrix(this_X, this_t, this_stn)
             this_H = this_Htilda * this_stm
 
-            this_comp = [float(this_Htilda[0] * this_X), # Range 
-                         float(this_Htilda[1] * this_X)] # Range-rate
-
-            this_resid = [ this_obs[1] - this_comp[0],
-                           this_obs[2] - this_comp[1]]
+            this_resid = [ this_obs[1] - float(this_comp[0]),
+                           this_obs[2] - float(this_comp[1])]
 
             this_y = sp.matrix([this_resid]).T
 
@@ -124,12 +116,6 @@ def iterate(X0, P0, x0):
     P = (L_.I).T * L_.I
     # Solve the normal equations for best estimate of X
     x_hat = P * N
- 
-#    print "### SUM: H.T * W * H"  
-#    print L
-#    print "### SUM: H.T * W * y" 
-#    print N
-#    exit()
  
     new_X = X0 + x_hat
     new_P = P
