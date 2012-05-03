@@ -100,4 +100,3 @@ def Htilda_matrix(U,t,stn):
 
 
     return comp, Htilda
-
