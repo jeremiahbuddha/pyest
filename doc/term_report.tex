@@ -1,0 +1,179 @@
+\documentclass[10pt]{article}
+
+%% include all additional packages
+\usepackage{amssymb,amsmath}
+\usepackage[margin=1in]{geometry}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{graphicx}
+\usepackage{fancybox}
+\usepackage{sidecap} % For caption next to figure
+
+\usepackage{colortbl} % For coloring table columns
+\usepackage{array} % For coloring table columns
+
+\newcommand{\heading}[1]{\textbf{\large #1}}
+
+
+\title{Orbit Determination via Batch and Sequential Filtering\\ using the Python Estimation (pyest) Package\\}
+\author{Jonathon J Smith}
+\date{ASEN-5070 Term Project \\\today}
+\thispagestyle{empty}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+The Python Estimation Package, which I am referring to as \textbf{pyest}, was developed to solve the problem presented by the CU-Boulder Statistical Orbit Determination (ASEN-5070) term project; establish the orbit of fictional Earth-orbiting spacecraft by processing 6 hours worth of simulated tracking data. The software is presented here in the context of that problem; the underlying force model is presented, the equations of motion are derived, and the batch and sequential filtering algorithms are developed. 
+
+Because this software was developed to solve this specific problem, some of it's assumptions are baked into the code. Every attempt was made to extract constant values and make them easy to edit, as a way to ``generalize" the code, but the equations of motion which are being integrated, and used later in the derivation of the filter, are very specific to this project. If this code were to be applied to another orbit determination problem, these modules would have to be reviewed and possibly re-derived.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Orbit Determination Project Description}
+
+The fictional spacecraft in this problem has an altitude of ~800 km and an inclination of around 98.6 degrees, an orbit modeled after the Quickscat satellite. It moves with two-body dynamics, perturbed only by the Earth's oblateness and atmosphere. We are given 6 hours of simulated tracking data along with an initial estimate of the spacecraft state at some (unspecified) epoch, which we process using both batch and sequential filters to establish the actual orbit.
+ 
+\subsection{Equations of motion}
+
+The spacecraft is assumed to be under the influence of two-body gravitation (s/c and Earth), including the effect of the oblateness of Earth (J2) but ignoring all higher order gravitational shape parameters. The potential function for this gravity field is:
+
+\begin{equation}
+ U = U_{pointmass} + U_{J2} =  \frac{\mu}{r}\left[ 1 - J_2\left(\frac{R_earth}{r}\right)^2 (\frac{3}{2}\sin^2{\psi} - \frac{1}{2}) \right]
+\end{equation}
+
+The spacecraft is also assumed to undergo drag due to Earth atmosphere, where the acceleration due to drag on the spacecraft is given by:
+
+\begin{equation}
+\begin{split}
+\ddot{\bar{r}}_{drag} & =  - \frac{1}{2} C_d \left( \frac{A}{m}\right) \rho_A V_A \bar{V}_A\\
+\text{with}\\
+V_A & = \sqrt{ (\dot{x} +  \dot{\theta}y)^2 + (\dot{y} -  \dot{\theta}x)^2 + (\dot{z})^2 } \\
+\rho_A & = \rho_0 e^{\frac{-(r-r_0)}{H}} \\
+\bar{V}_A & = 
+    \begin{bmatrix} 
+     \dot{x} +  \dot{\theta}y \\
+     \dot{y} -  \dot{\theta}x\\
+     \dot{z}    
+     \end{bmatrix} \\
+\end{split}
+\end{equation}
+
+Under the influence of these forces, the acceleration undergone by the spacecraft is given by:
+
+\begin{equation}
+\ddot{r} =  \ddot{r}_{twobody} + \ddot{r}_{J_2} + \ddot{r}_{drag} 
+\end{equation}
+
+Leading to the following equations of motion (given in differential form):
+
+\begin{equation}
+\begin{split}
+\dot{X}  & = U \\
+\dot{Y}  & = V \\
+\dot{Z}  & = W \\
+\dot{U} & = \frac{-\mu X}{r^3}\left[ 1 - \frac{3}{2}J_2\left(\frac{R_{earth}}{r}\right)^2 \left(5 \left(\frac{Z}{r}\right)^2 - 1 \right)\right]  -  \frac{1}{2} C_d \left( \frac{A}{m}\right) \rho_A V_A ( \dot{X} +  \dot{\theta}Y)\\
+\dot{V} & = \frac{-\mu Y}{r^3}\left[ 1 - \frac{3}{2}J_2\left(\frac{R_{earth}}{r}\right)^2 \left(5 \left(\frac{Z}{r}\right)^2 - 1 \right)\right]  -  \frac{1}{2} C_d \left( \frac{A}{m}\right) \rho_A V_A (\dot{Y} -  \dot{\theta}X) \\
+\dot{W} & = \frac{-\mu Z}{r^3}\left[ 1 - \frac{3}{2}J_2\left(\frac{R_{earth}}{r}\right)^2 \left(5 \left(\frac{Z}{r}\right)^2 - 3 \right)\right] -  \frac{1}{2} C_d \left( \frac{A}{m}\right) \rho_A V_A ( \dot{Z}) \\
+\end{split}
+\end{equation}
+
+\subsection{Tracking Measurements}
+
+Our fictional spacecraft is being tracked by three Earth ground stations, taking both range and range-rate measurements. The equations below give the analytic form of the measurement types:
+
+\begin{equation}
+\begin{split}
+\rho  & = \sqrt{X^2 + Y^2 + Z^2 + X_s^2 + Y_s^2 + Z_s^2 - 2 (X  X_s + Y  Y_s )\cos{\theta} + 2( X Y_s - Y X_s)\sin{\theta} - 2 Z Z_s}  \\
+\dot{\rho} & = \frac{X \dot{X} + Y \dot{Y} + Z \dot{Z} - (\dot{X} X_s + \dot{Y} Y_s ) \cos{\theta} + \dot{\theta} (X X_s + Y Y_s) \sin{\theta} + (\dot{X} Y_s - \dot{Y} X_s) \sin{\theta} + \dot{\theta} (X Y_s - Y X_s) \cos{\theta} - Z Z_s}{\rho}
+\end{split}
+\end{equation}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Developing the Batch and Sequential Filters}
+
+Based on the project description and equations of motion, we can now begin developing our OD filters. First we establish the state vector which is to be estimated. Then we linearize the state and measurement equations by forming the $A$ and $\tilde{H}$ matrices. Finally, we layout the estimation algorithm for the batch and sequential filters. 
+
+\subsection{State Vector}
+
+The full state which we are estimating consists of 18 parameters; the spacecraft cartesian state at epoch, spacecraft coefficient of drag, the Earths GM and J2, and the ECI cartesian location of the three tracking stations. Table 1 lists the state vector and their a priori values, to the full precision given by the project instructions. Because these values are being numerically integrated and used in matrix inversions it is important that they be expressed to their max precision.
+
+\begin{table}[htdp]
+\caption{Project State Vector}
+\begin{center}
+\begin{tabular}{|c|l|l|}
+\hline\hline
+X & 757700.0 m & s/c ECI X coord \\
+Y & 5222607.0 m & s/c ECI Y coord \\
+Z & 4851500.0 m & s/c ECI Z coord \\
+dX & 2213.21 m/s & s/c ECI dX coord \\
+dY & 4678.34 m/s & s/c ECI dY coord \\
+dZ & -5371.30 m/s & s/c ECI dZ coord \\
+mu & 3.986004415E+14 m**3/s**2 & Earth GM \\
+J2 & 1.082626925638815E-3 & Earth J2 \\
+Cd & 2.0 & s/c Coefficient of Drag \\
+X1 & -5127510.0 m & Station 101 ECF X coord \\
+Y1 & -3794160.0 m & Station 101 ECF Y coord \\
+Z1 & 0.0 m & Station 101 ECF Z coord \\
+X2 & 3860910.0 m & Station 337 ECF X coord \\
+Y2 & 3238490.0 m & Station 337 ECF Y coord \\
+Z2 & 3898094.0 m & Station 337 ECF Z coord \\
+X3 & 549505.0  m & Station 394 ECF X coord \\
+Y3 & -1380872.0 m & Station 394 ECF Y coord \\
+Z3 & 6182197.0 m & Station 394 ECF Z coord \\
+\hline\hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}%
+
+
+\subsection{Linearized system}
+
+Both the equations of motion and measurement-state equations are non-linear systems. We can use them to calculate the position of the spacecraft at some future time (EOMs) and the ``computed" measurements at that time; however, propagating the state and measurement uncertainties through time using the non-linear equations is problematic. Therefore, before we can build our filters we need to linearize the equations.  The linearization procedure, including constructing the state and observation deviation vectors, expanding in taylor series expansion, etc. is covered in detail on pages [160 - 164] of the reference text. Here we focus on deriving the  the $A$ and $\tilde{H}$ matrices, which are the prime players in linearizing the state and measurement equations, respectively. 
+
+The $A$ matrix is has the rank of our state vector (18), and is simply the matrix of partial derivatives of our differential state vector with respect to our state elements.
+
+\begin{equation}
+A  = 
+    \begin{bmatrix} 
+     \frac{\partial\dot{\bar{X}}}{\partial\bar{X}}      
+     \end{bmatrix} 
+\end{equation}
+
+It is used to form our linearized differential state equations and derive the \emph{state transition matrix}, $\Phi(t,t_0)$, which can be used to map our state deviation vector and errors from our epoch at $t_0$ to any time $t$ (or vice-versa);
+
+\begin{equation}
+\dot{\Phi}(t,t_0)  = A(t)* \Phi(t,t_0)
+\end{equation}
+
+The asterisk on $A(t)$ in the above equation is meant to signify that it is being evaluated against the reference trajectory at time $t$.
+
+The $\tilde{H}$ matrix has rank equal to the number of measurement types we are using, and is the matrix of partial derivatives of our measurements with respect to our state elements.
+
+\begin{equation}
+\tilde{H} = 
+    \begin{bmatrix} 
+     \frac{\partial\bar{\rho}}{\partial\bar{X}}      
+     \end{bmatrix} 
+\end{equation}
+
+The $\tilde{H}(t)$ matrix, again evaluated against the reference trajectory at time $t$, maps deviations and errors in our state space into deviations and errors in our measurement space. 
+
+Both $A$ and $\tilde{H}$ are \emph{built} by evaluating the (non-linear) state ($\bar{X}$) at time $t$, but they can only \emph{operate} on the state deviation vector ($\bar{x}$) at time $t$; this is an important distinction.
+
+\subsection{Batch Algorithm}
+
+With our linearized system established, we can now build our batch filtering algorithm.
+
+\subsection{Sequential Algorithm}
+Give an outline of the Sequential algorithm here.
+
+\section{\textbf{pyest} Package description}
+
+
+
+\end{document}  
