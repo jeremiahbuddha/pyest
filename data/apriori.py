@@ -29,6 +29,10 @@ stn394 = [549505.0,-1380872.0, 6182197.0]
 range_sigma = 0.01 # meters
 range_rate_sigma = 0.001 # meters/sec
 
+#range_sigma = 0.00001 # meters
+#range_rate_sigma = 0.000001 # meters/sec
+
+
 W = matrix( [ [ 1.0 / range_sigma**2 , 0.0                       ],
               [ 0.0                  , 1.0 / range_rate_sigma**2 ] ] )
 

@@ -233,6 +233,22 @@ def iterate_sequential(X_bar0, P_bar0, x_bar0):
 
     return new_X, new_P, new_x, resids, [x_hat, Xs, stms, comps, resids, Htildas, Ps]
 
+def get_postfit_resids(run_data):
+    # Generate postfit residuals
+    x_hat = run_data[0]
+    resids = run_data[4]
+    Hs = run_data[6]
+    presids = {}
+    for time in range(0, int(T_END), int(T_DELTA)):
+        if time in OBS.keys():
+            obs = OBS[time]
+            resid = resids[time]
+            offset= Hs[time] * x_hat
+            presid = [ resid[0] - float(offset[0]),
+                       resid[1] - float(offset[1])]
+            presids[time] = presid
+    return presids
+
 def plot_resids(resids, title = "Residuals (obs - com)"):
 
     # Compute the RMS for range and range-rate
@@ -305,7 +321,7 @@ def print_covariance(P):
         for col in range(18):
             # Print correlations on lower diagnal
             if col < row:
-                out += "{0: 2.2e}, ".format(float(P[row,col]/(sqrt(P[row,row]) * sqrt(P[col,col]) )))
+                out += "{0: 2.2f},     ".format(float(P[row,col]/(sqrt(P[row,row]) * sqrt(P[col,col]) )))
             # Highlight variances in blue
             elif row == col:
                 out += b("{0: 2.2e}, ".format(float(P[row,col])))
@@ -357,50 +373,52 @@ if __name__ == '__main__':
     # RUN THE BATCH FILTER
 
     # The first fit uses the apriori vals / covariance
-    X1, P1, x1, resids1, TEST_DATA = iterate_batch(INITIAL_X0, INITIAL_P0, INITIAL_x0)
+    X1, P1, x1, resids1, run_data = iterate_batch(INITIAL_X0, INITIAL_P0, INITIAL_x0)
+    presids1 = get_postfit_resids(run_data)
     # Plot the residuals
-    rng_rms, dRng_rms = plot_resids(resids1, title="Batch Residuals (obs - com) for Iter 1")
+    rng_rms, dRng_rms = plot_resids(resids1, title="Prefit Batch Residuals (obs - com) for Iter 1")
+    prng_rms, pdRng_rms = plot_resids(presids1, title="Postfit Batch Residuals (obs - com) for Iter 1")
 
-    print "\n### First x_hat for batch"
-    print TEST_DATA[0]
+    print "\n### Batch x_hat for iteration 1:"
+    print_state(run_data[0])
+    print "\n### Batch Cov for iteration 1:"
+    print_covariance(P1)
+    
+    ## Second fit
+    X2, P2, x2, resids2, run_data = iterate_batch(X1, INITIAL_P0, x1)
+    presids2 = get_postfit_resids(run_data)
+    # Plot the residuals
+    rng_rms, dRng_rms = plot_resids(resids2, title="Batch Residuals (obs - com) for Iter 2")
+    prng_rms, pdRng_rms = plot_resids(presids2, title="Postfit Batch Residuals (obs - com) for Iter 2")
 
+    print "Batch x_hat for iteration 2:"
+    print_state(run_data[0])
+    print "Batch Cov for iteration 2:"
+    print_covariance(P2)
 
-#    print "\n### x_hat for iteration 1:"
-#    print_state(TEST_DATA[0])
-#    print "\n### Cov for iteration 1:"
-#    print_covariance(P1)
-#    
-#    ## Second fit
-#    X2, P2, x2, resids2, TEST_DATA = iterate(X1, INITIAL_P0, x1)
-#    # Plot the residuals
-#    rng_rms, dRng_rms = plot_resids(resids2, title="Residuals (obs - com) for Iter 2")
-#
-#    print "x_hat for iteration 2:"
-#    print_state(TEST_DATA[0])
-#    print "Cov for iteration 2:"
-#    print_covariance(P2)
-#
-#    ## Third fit
-#    X3, P3, x3, resids3, TEST_DATA = iterate(X2, INITIAL_P0, x2)
-#    ## Plot the residuals
-#    rng_rms, dRng_rms = plot_resids(resids3, title="Residuals (obs - com) for Iter 3")
-#
-#    print "x_hat for iteration 3:"
-#    print_state(TEST_DATA[0])
-#    print "Cov for iteration 3:"
-#    print_covariance(P3)
+    ## Third fit
+    X3, P3, x3, resids3, run_data = iterate_batch(X2, INITIAL_P0, x2)
+    presids3 = get_postfit_resids(run_data)
+    ## Plot the residuals
+    rng_rms, dRng_rms = plot_resids(resids3, title="Batch Residuals (obs - com) for Iter 3")
+    prng_rms, pdRng_rms = plot_resids(presids3, title="Postfit Batch Residuals (obs - com) for Iter 3")
+
+    print "Batch x_hat for iteration 3:"
+    print_state(run_data[0])
+    print "Batch Cov for iteration 3:"
+    print_covariance(P3)
 
     # ==============================================================================
     # RUN THE SEQUENTIAL FILTER
 
-    # The first fit uses the apriori vals / covariance
-    X1, P1, x1, resids1, TEST_DATA = iterate_sequential(INITIAL_X0, INITIAL_P0, INITIAL_x0)
-    # Plot the residuals
-    rng_rms, dRng_rms = plot_resids(resids1, title="Sequential Residuals (obs - com) for Iter 1")
-
-    print "\n### First x_hat for sequential"
-    print TEST_DATA[0]
-
+#    # The first fit uses the apriori vals / covariance
+#    X1, P1, x1, resids1, TEST_DATA = iterate_sequential(INITIAL_X0, INITIAL_P0, INITIAL_x0)
+#    # Plot the residuals
+#    rng_rms, dRng_rms = plot_resids(resids1, title="Sequential Residuals (obs - com) for Iter 1")
+#
+#    print "\n### First x_hat for sequential"
+#    print TEST_DATA[0]
+#
 #    # Second fit
 #    X2, P2, x2, resids2, TEST_DATA = iterate_sequential(X1, INITIAL_P0, x1)
 #    # Plot the residuals
