@@ -27,24 +27,24 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
-The Python Estimation Package, which I am referring to as \textbf{pyest}, was developed to solve the problem presented by the CU-Boulder Statistical Orbit Determination (ASEN-5070) term project; establish the orbit of fictional Earth-orbiting spacecraft by processing 6 hours worth of simulated tracking data. The software is presented here in the context of that problem; the underlying force model is presented, the equations of motion are derived, and the batch and sequential filtering algorithms are developed. 
+The Python Estimation Package, which I am referring to as \textbf{pyest}, was developed to solve the problem presented by the CU-Boulder Statistical Orbit Determination (ASEN-5070) term project; establish the orbit of fictional Earth-orbiting spacecraft by processing 6 hours worth of simulated tracking data. The software is presented here in the context of that problem; the underlying force model is explained, the equations of motion are derived, and the batch and sequential filtering algorithms are developed. 
 
-Because this software was developed to solve this specific problem, some of it's assumptions are baked into the code. Every attempt was made to extract constant values and make them easy to edit, as a way to ``generalize" the code, but the equations of motion which are being integrated, and used later in the derivation of the filter, are very specific to this project. If this code were to be applied to another orbit determination problem, these modules would have to be reviewed and possibly re-derived.
+%Because this software was developed to solve this specific problem, many of it's assumptions are baked into the code. Every attempt was made to extract constant values and make them easy to edit, as a way to ``generalize" the code, but the equations of motion which are being integrated, and used later in the derivation of the filter, are very specific to this project. If this code were to be applied to another orbit determination problem, these modules would have to be reviewed and possibly re-derived.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Orbit Determination Project Description}
 
-The fictional spacecraft in this problem has an altitude of ~800 km and an inclination of around 98.6 degrees, an orbit modeled after the Quickscat satellite. It moves with two-body dynamics, perturbed only by the Earth's oblateness and atmosphere. We are given 6 hours of simulated tracking data along with an initial estimate of the spacecraft state at some (unspecified) epoch, which we process using both batch and sequential filters to establish the actual orbit.
+The fictional spacecraft in this problem has an altitude of ~800 km and an inclination of around 98.6 degrees, an orbit modeled after the Quickscat satellite. It moves with two-body dynamics, perturbed only by the Earth's oblateness and atmosphere. We are given 6 hours of simulated tracking data along with an initial estimate of the spacecraft state at some (unspecified) epoch, which we process using both batch and sequential filters to establish the best estimate of the orbit.
  
 \subsection{Equations of motion}
 
 The spacecraft is assumed to be under the influence of two-body gravitation (s/c and Earth), including the effect of the oblateness of Earth (J2) but ignoring all higher order gravitational shape parameters. The potential function for this gravity field is:
 
 \begin{equation}
- U = U_{pointmass} + U_{J2} =  \frac{\mu}{r}\left[ 1 - J_2\left(\frac{R_earth}{r}\right)^2 (\frac{3}{2}\sin^2{\psi} - \frac{1}{2}) \right]
+ U = U_{pointmass} + U_{J_2} =  \frac{\mu}{r}\left[ 1 - J_2\left(\frac{R_{earth}}{r}\right)^2 \left(\frac{3}{2}\sin^2{\psi} - \frac{1}{2}\right) \right]
 \end{equation}
 
-The spacecraft is also assumed to undergo drag due to Earth atmosphere, where the acceleration due to drag on the spacecraft is given by:
+The spacecraft is also assumed to experience drag due to Earth atmosphere, where the acceleration due to drag on the spacecraft is given by:
 
 \begin{equation}
 \begin{split}
@@ -61,7 +61,7 @@ V_A & = \sqrt{ (\dot{x} +  \dot{\theta}y)^2 + (\dot{y} -  \dot{\theta}x)^2 + (\d
 \end{split}
 \end{equation}
 
-Under the influence of these forces, the acceleration undergone by the spacecraft is given by:
+Under the influence of these forces, the acceleration of the spacecraft is given by:
 
 \begin{equation}
 \ddot{r} =  \ddot{r}_{twobody} + \ddot{r}_{J_2} + \ddot{r}_{drag} 
@@ -79,6 +79,8 @@ Leading to the following equations of motion (given in differential form):
 \dot{W} & = \frac{-\mu Z}{r^3}\left[ 1 - \frac{3}{2}J_2\left(\frac{R_{earth}}{r}\right)^2 \left(5 \left(\frac{Z}{r}\right)^2 - 3 \right)\right] -  \frac{1}{2} C_d \left( \frac{A}{m}\right) \rho_A V_A ( \dot{Z}) \\
 \end{split}
 \end{equation}
+
+These equations are numerically integrated using a Runge-kutta (8)9 integrator in the package. 
 
 \subsection{Tracking Measurements}
 
@@ -99,7 +101,7 @@ Based on the project description and equations of motion, we can now begin devel
 
 \subsection{State Vector}
 
-The full state which we are estimating consists of 18 parameters; the spacecraft cartesian state at epoch, spacecraft coefficient of drag, the Earths GM and J2, and the ECI cartesian location of the three tracking stations. Table 1 lists the state vector and their a priori values, to the full precision given by the project instructions. Because these values are being numerically integrated and used in matrix inversions it is important that they be expressed to their max precision.
+The full state which we are estimating consists of 18 parameters; the spacecraft cartesian state at epoch, spacecraft coefficient of drag, the Earths GM and $J_2$, and the ECI cartesian location of the three tracking stations. Table 1 lists the state vector and their a priori values, to the full precision given by the project instructions. Because these values are being numerically integrated and used in matrix inversions it is important that they be expressed to their max precision.
 
 \begin{table}[htdp]
 \caption{Project State Vector}
@@ -133,8 +135,10 @@ Z3 & 6182197.0 m & Station 394 ECF Z coord \\
 
 \subsection{Linearized system}
 
-Both the equations of motion and measurement-state equations are non-linear systems. We can use them to calculate the position of the spacecraft at some future time (EOMs) and the ``computed" measurements at that time; however, propagating the state and measurement uncertainties through time using the non-linear equations is problematic. Therefore, before we can build our filters we need to linearize the equations.  The linearization procedure, including constructing the state and observation deviation vectors, expanding in taylor series expansion, etc. is covered in detail on pages [160 - 164] of the reference text. Here we focus on deriving the  the $A$ and $\tilde{H}$ matrices, which are the prime players in linearizing the state and measurement equations, respectively. 
-
+Both the equations of motion and measurement-state equations are non-linear systems. We can use them to, respectively, calculate the position of the spacecraft at some future time and the ``computed" measurements at that time; however, propagating the state and measurement uncertainties through time using the non-linear equations is problematic. Therefore, before we can build our filters we need to linearize the system. 
+The first step is to form our state deviation vector $x(t)$. The true state at time $t$ is $X(t)$, the corresponding state on our reference trajectory is $X^*(t)$, which makes our state deviation vector $x(t) = X(t) - X^*(t)$. As long as the difference between the true state and our reference state is ``small", our linear assumption will hold and our filters will function. However, if our reference trajectory wanders too far from the true trajectory, our linear filters will diverge.
+ The full linearization procedure is covered in detail on pages [160 - 164] of the reference text. Here we focus on deriving the  the $A$ and $\tilde{H}$ matrices, which are the prime players in linearizing the state and measurement equations, respectively. 
+ 
 The $A$ matrix is has the rank of our state vector (18), and is simply the matrix of partial derivatives of our differential state vector with respect to our state elements.
 
 \begin{equation}
@@ -147,7 +151,7 @@ A  =
 It is used to form our linearized differential state equations and derive the \emph{state transition matrix}, $\Phi(t,t_0)$, which can be used to map our state deviation vector and errors from our epoch at $t_0$ to any time $t$ (or vice-versa);
 
 \begin{equation}
-\dot{\Phi}(t,t_0)  = A(t)* \Phi(t,t_0)
+\dot{\Phi}(t,t_0)  = A(t)^* \Phi(t,t_0)
 \end{equation}
 
 The asterisk on $A(t)$ in the above equation is meant to signify that it is being evaluated against the reference trajectory at time $t$.
@@ -172,8 +176,55 @@ With our linearized system established, we can now build our batch filtering alg
 \subsection{Sequential Algorithm}
 Give an outline of the Sequential algorithm here.
 
-\section{\textbf{pyest} Package description}
+\section{\textbf{pyest} Package}
+
+The project code is implemented in the Python programming language. It makes extensive use of \textbf{numpy} / \textbf{scipy}'s matrix and numerical integrations capabilities, and \textbf{matplotlib}'s plotting utilities ( \textbf{numpy} / \textbf{scipy} and \textbf{matplotlib} are both third-party, open source extensions to the Python core). 
+Python was chosen in favor of Matlab for several reasons, including
+
+\begin{itemize}
+\item Python is free and open-source, making it less expensive to develop and more accessible to others (since a Matlab liscence isn't a precursor to running the code).
+\item Python is a full-weight programming language, with plug-ins for pretty much every type of software application. Time spent learning Python is time well invested. 
+\item The Python module / package system is ideal for organizing code in a logical and comprehensible fashion.
+\item Python's insistence on indentation forces easy to read, beautiful code.
+\end{itemize}
+
+\subsection{Package organization}
+The package is organized into four sub-modules, depicted in figure blah and described below:
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=2in]{pyest_package.png}
+\caption{Layout of pyest packaget}
+%\label{default}
+\end{center}
+\end{figure}
+
+\begin{description}
+\item[filter] The heart of the package. It contains code defining the $A$ and $\tilde{H}$ matrices, the batch and sequential filtering algorithms, and functions for presenting and plotting results.
+\item[data] Contains project data, including a priori values, constants, and observations.
+\item[doc] The source latex code for this report.
+\item[test] Defines tests which check sub-functions against the reference values given on the ASEN-5070 website.
+\item[project\_main.py] This is the command line utility that runs the filters.
+\end{description}
+
+\subsection{Obtaining and running \textbf{pyest}}
+
+The major elements of the filter module have been attached as an appendix to this report. The source code in it's entirety is viewable and downloadable online in a github repository at https://github.com/jeremiahbuddha/pyest. 
+
+Before executing \textbf{pyest}, you must make sure that a suitable version of Python, along with other dependencies, have been installed on your machine. \textbf{pyest} was built using Python v2.7, and this is the recommended version to run it with. Also, as previously mentioned, the package requires numpy / scipy and matplotlib. An easy way to obtain all the dependencies required to run the package is to download the latest version of EPDFree from Enthought Inc., an excellent distributor of scientific programming toolkits for Python.
+
+It is also necessary to check the pound line in \emph{project\_main.py} to make sure that it is pointing to the correct python executable on your machine. Currently, the line reads \emph{\#! /usr/bin/env python}, but it may need to be changed if, for instance, you install EPDFree, to the correct python binary for that distribution.
+
+\section{Discussion of Results}
+
+The pyest package has been used to process the project tracking data and obtain a best estimate of the spacecraft state at epoch. The following is a discussion of the results obtained running both the batch and sequential filters.
+
+\subsection{Batch Results}
 
 
+
+\subsection{Sequential Results}
+
+blah
 
 \end{document}  
