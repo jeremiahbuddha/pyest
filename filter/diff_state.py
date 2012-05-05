@@ -1,17 +1,11 @@
-#! /usr/bin/env python
 
-import sys
-from pyest import *
 from pyest.data import *
-from pyest.integ import A_matrix
+from pyest.filter import A_matrix, acc_j2, acc_drag, r
 from scipy import matrix, array
 
 # ==============================================================================
 # ==============================================================================
 # Define the differential state vector and stm
-
-# NOTE: The equations for J2 and Drag accelerations are given in the solutions
-# to ASEN5070 HW#2
 
 def Udot(t, U):
 

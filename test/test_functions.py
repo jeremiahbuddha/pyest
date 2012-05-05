@@ -2,7 +2,7 @@
 
 import unittest as ut
 import scipy as sp
-from pyest.integ import A_matrix, Htilda_matrix
+from pyest.filter import A_matrix, Htilda_matrix
 from pyest.data import *
 from pyest.test import *
 from pyest.project_main import iterate

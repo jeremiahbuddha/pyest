@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
 from math import pi, sqrt, sin, cos, tan, acos, asin, atan, atan2
-from scipy import matrix
+from scipy import matrix, zeros
+from pyest.filter import split_state, split_stn_coords
 from pyest.data import *
-from pyest import *
 
 # ==============================================================================
 # Define the partial derivative H~-Matrix for the projects state
@@ -38,7 +38,7 @@ def Htilda_matrix(U,t,stn):
 
     # Most of the Htilda-matrix are zero's. Define a matrix of all zero's here, and
     # then fill in the non-zero terms below.
-    Htilda = sp.zeros((2, 18), float)
+    Htilda = zeros((2, 18), float)
 
     # ==========================================================================
     # Partial of range wrt STATE

@@ -4,6 +4,12 @@ from scipy import matrix, eye
 # ==============================================================================
 # Project Constants
 
+I = matrix(eye(18))
+
+# End time and step size
+T_END = 18340.0
+T_DELTA = 20.0
+
 # Earth constants
 dTheta = 7.29211585530066E-5
 J2 = 1.082626925638815E-3
