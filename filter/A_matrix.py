@@ -1,10 +1,9 @@
-#! /usr/bin/env python
 
-from math import pi, sqrt, sin, cos, tan, acos, asin, atan, atan2
-from scipy import matrix
+from math import pi, sqrt 
+from scipy import matrix, zeros
 from pyest.data import *
-from pyest import *
-
+from pyest.filter import split_state, rho_A, V_A
+ 
 def eval_drag(U):
     """
     Evaluates drag parameters for a particular value of the
@@ -28,7 +27,7 @@ def A_matrix(U):
 
     # Most of the A-matrix are zero's. Define a matrix of all zero's here, and
     # then fill in the non-zero terms below.
-    Atrix = sp.zeros((18, 18), float)
+    Atrix = zeros((18, 18), float)
 
     # ==========================================================================
     # Partial of dX wrt STATE
