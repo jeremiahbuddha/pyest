@@ -32,39 +32,39 @@ def A_matrix(U):
     # ==========================================================================
     # Partial of dX wrt STATE
     # dX/dX
-    Atrix[0, 3] = 1.0
+    Atrix[0, 3] = 1.
 
     # ==========================================================================
     # Partial of dY wrt STATE
     # dY/dY
-    Atrix[1, 4] = 1.0
+    Atrix[1, 4] = 1.
 
     # ==========================================================================
     # Partial of dZ wrt STATE
     # dZ/dZ
-    Atrix[2, 5] = 1.0
+    Atrix[2, 5] = 1.
 
     # ==========================================================================
     # Partial of ddX wrt STATE
 
     # ddX/X
-    Atrix[3, 0] = -mu / r**3 * (1 - (3.0/2.0) * J2 * (R / r)**2 * (5 * (Z / r)**2 - 1)) + \
-              3 * mu * X**2 / r**5 * (1 - (5.0/2.0) * J2 * (R / r)**2 * (7 * (Z / r)**2 - 1)) + \
+    Atrix[3, 0] = -mu / r**3. * (1. - (3. / 2.) * J2 * (R / r)**2. * (5. * (Z / r)**2. - 1.)) + \
+              3. * mu * X**2. / r**5. * (1. - (5./2.) * J2 * (R / r)**2. * (7. * (Z / r)**2. - 1.)) + \
               drag_C * _rho_A *_V_A * X * (dX + dTheta * Y) / (r * h_step) + \
-             -drag_C * _rho_A * (-dTheta * dY + dTheta**2 * X) * (dX + dTheta * Y) /_V_A
+             -drag_C * _rho_A * (-dTheta * dY + dTheta**2. * X) * (dX + dTheta * Y) /_V_A
 
     # ddX/Y
-    Atrix[3, 1] = 3 * mu * X * Y / r**5 * (1 - (5.0/2.0) * J2 *(R / r)**2 * (7 * (Z / r)**2 - 1)) + \
+    Atrix[3, 1] = 3. * mu * X * Y / r**5. * (1. - (5. / 2.) * J2 *(R / r)**2. * (7. * (Z / r)**2. - 1.)) + \
               drag_C * _rho_A *_V_A * Y * (dX + dTheta * Y) / (r * h_step) + \
-             -drag_C * _rho_A * (dTheta * dX + dTheta**2 * Y) * (dX + dTheta * Y) /_V_A + \
+             -drag_C * _rho_A * (dTheta * dX + dTheta**2. * Y) * (dX + dTheta * Y) /_V_A + \
              -drag_C * _rho_A *_V_A * dTheta
 
     # ddX/Z
-    Atrix[3, 2] = 3 * mu * X * Z / r**5 * (1 - (5.0/2.0) * J2 *(R / r)**2 * ( 7 * (Z / r)**2 - 3)) + \
+    Atrix[3, 2] = 3. * mu * X * Z / r**5. * (1. - (5. / 2.) * J2 * (R / r)**2. * ( 7. * (Z / r)**2. - 3.)) + \
               drag_C * _rho_A *_V_A * Z * (dX + dTheta * Y) / (r * h_step)
 
     # ddX/dX
-    Atrix[3, 3] = -drag_C * _rho_A * (dX + dTheta * Y)**2 /_V_A + \
+    Atrix[3, 3] = -drag_C * _rho_A * (dX + dTheta * Y)**2. /_V_A + \
              -drag_C * _rho_A *_V_A
 
     # ddX/dY
@@ -74,70 +74,70 @@ def A_matrix(U):
     Atrix[3, 5] = -drag_C *_rho_A * dZ * (dX + dTheta * Y) /_V_A 
 
     # ddX/mu
-    Atrix[3, 6] = -X / r**3 * (1 - (3.0/2.0) * J2 * (R / r)**2 * (5 * (Z / r)**2 - 1))
+    Atrix[3, 6] = -X / r**3. * (1. - (3. / 2.) * J2 * (R / r)**2. * (5. * (Z / r)**2. - 1.))
 
     # ddX/J2
-    Atrix[3, 7] = (3.0/2.0) * mu * X / r**3 * (R / r)**2 * (5.0 * (Z / r)**2 - 1.0)
+    Atrix[3, 7] = (3. / 2.) * mu * X / r**3. * (R / r)**2. * (5. * (Z / r)**2. - 1.)
 
     # ddX/Cd
-    Atrix[3, 8] = -(1.0/2.0) * (A / m) *_rho_A *_V_A * (dX + dTheta * Y)
+    Atrix[3, 8] = -(1. / 2.) * (A / m) *_rho_A *_V_A * (dX + dTheta * Y)
 
     # ==========================================================================
     # Partial of ddY wrt STATE
 
     # ddY/X
-    Atrix[4, 0] = 3 * mu * X * Y / r**5 * (1 - (5.0/2.0) * J2 * (R / r)**2 * (7 * (Z / r)**2 - 1)) + \
+    Atrix[4, 0] = 3. * mu * X * Y / r**5. * (1. - (5. / 2.) * J2 * (R / r)**2. * (7. * (Z / r)**2. - 1.)) + \
               drag_C *_rho_A *_V_A * X * (dY - dTheta * X) / (r * h_step) + \
-             -drag_C *_rho_A * (dTheta**2 * X - dTheta * dY) * (dY - dTheta * X) /_V_A + \
+             -drag_C *_rho_A * (dTheta**2. * X - dTheta * dY) * (dY - dTheta * X) /_V_A + \
               drag_C *_rho_A *_V_A * dTheta
 
     # ddY/Y
-    Atrix[4, 1] = -mu / r**3 * (1 - (3.0/2.0) * J2 * (R / r)**2 * (5 * (Z / r)**2 - 1)) + \
-              3 * mu * Y**2 / r**5 * (1 - (5.0/2.0) * J2 * (R / r)**2 * (7 * (Z / r)**2 - 1)) + \
+    Atrix[4, 1] = -mu / r**3. * (1. - (3. / 2.) * J2 * (R / r)**2. * (5. * (Z / r)**2. - 1.)) + \
+              3. * mu * Y**2 / r**5. * (1. - (5. / 2.) * J2 * (R / r)**2. * (7. * (Z / r)**2. - 1.)) + \
               drag_C *_rho_A *_V_A * Y * (dY - dTheta * X) / (r * h_step) + \
              -drag_C *_rho_A * (dTheta * dX + dTheta**2 * Y) * (dY - dTheta * X) /_V_A
 
     # ddY/Z
-    Atrix[4, 2] = 3 * mu * Y * Z / r**5 * (1 - (5.0/2.0) * J2 * (R / r)**2 * (7 * (Z / r)**2 - 3)) + \
+    Atrix[4, 2] = 3. * mu * Y * Z / r**5. * (1. - (5. / 2.) * J2 * (R / r)**2. * (7. * (Z / r)**2. - 3.)) + \
               drag_C *_rho_A *_V_A * Z * (dY - dTheta * X) / (r * h_step)
 
     # ddY/dX
     Atrix[4, 3] = -drag_C *_rho_A * (dY - dTheta * X) * (dX + dTheta * Y) /_V_A
 
     # ddY/dY
-    Atrix[4, 4] = -drag_C *_rho_A * (dY - dTheta * X)**2 /_V_A + \
+    Atrix[4, 4] = -drag_C *_rho_A * (dY - dTheta * X)**2. /_V_A + \
              -drag_C *_rho_A *_V_A
 
     # ddY/dZ
     Atrix[4, 5] = -drag_C *_rho_A * dZ * (dY - dTheta * X) /_V_A
 
     # ddY/mu
-    Atrix[4, 6] = -Y / r**3 * (1 - (3.0/2.0) * J2 * (R / r)**2 * (5 * (Z / r)**2 - 1))
+    Atrix[4, 6] = -Y / r**3. * (1. - (3. / 2.) * J2 * (R / r)**2. * (5. * (Z / r)**2. - 1.))
 
     # ddY/J2
-    Atrix[4, 7] = (3.0/2.0) * mu * Y / r**3 * (R / r)**2 * (5.0 * (Z / r)**2 - 1.0)
+    Atrix[4, 7] = (3. / 2.) * mu * Y / r**3. * (R / r)**2. * (5. * (Z / r)**2. - 1.)
 
     # ddY/Cd
-    Atrix[4, 8] = -(1.0/2.0) * (A / m) *_rho_A *_V_A * (dY - dTheta * X)
+    Atrix[4, 8] = -(1. / 2.) * (A / m) *_rho_A *_V_A * (dY - dTheta * X)
 
     # ==========================================================================
     # Partial of ddZ wrt STATE
 
     # ddZ/X
-    Atrix[5, 0] = 3 * mu * X * Z / r**5 * (1 - (5.0/2.0) * J2 * (R / r)**2 * (7 * (Z / r)**2 - 3)) + \
+    Atrix[5, 0] = 3. * mu * X * Z / r**5. * (1. - (5. / 2.) * J2 * (R / r)**2. * (7. * (Z / r)**2. - 3.)) + \
               drag_C *_rho_A *_V_A * dZ * X / (r * h_step) + \
-             -drag_C *_rho_A * dZ * (dTheta**2 * X - dTheta * dY) /_V_A
+             -drag_C *_rho_A * dZ * (dTheta**2. * X - dTheta * dY) /_V_A
               
 
     # ddZ/Y
-    Atrix[5, 1] = 3 * mu * Y * Z / r**5 * (1 - (5.0/2.0) * J2 * (R / r)**2 * (7 * (Z / r)**2 - 3)) + \
+    Atrix[5, 1] = 3. * mu * Y * Z / r**5. * (1. - (5. / 2.) * J2 * (R / r)**2. * (7. * (Z / r)**2. - 3.)) + \
               drag_C *_rho_A *_V_A * dZ * Y / (r * h_step) + \
-             -drag_C *_rho_A * dZ * (dTheta * dX + dTheta**2 * Y) /_V_A
+             -drag_C *_rho_A * dZ * (dTheta * dX + dTheta**2. * Y) /_V_A
 
 
     # ddZ/Z
-    Atrix[5, 2] = -mu / r**3 * (1 - (3.0/2.0) * J2 * (R / r)**2 * (5 * (Z / r)**2 - 3)) + \
-              3 * mu * Z**2 / r**5 * (1 - (5.0/2.0) * J2 * (R / r)**2 * (7 * (Z / r)**2 - 5)) + \
+    Atrix[5, 2] = -mu / r**3. * (1. - (3. / 2.) * J2 * (R / r)**2. * (5. * (Z / r)**2. - 3.)) + \
+              3. * mu * Z**2. / r**5. * (1. - (5. / 2.) * J2 * (R / r)**2. * (7. * (Z / r)**2. - 5.)) + \
               drag_C *_rho_A *_V_A * Z * dZ / (r * h_step)
 
     # ddZ/dX
@@ -147,17 +147,17 @@ def A_matrix(U):
     Atrix[5, 4] = -drag_C *_rho_A * dZ * (dY - dTheta * X) /_V_A 
 
     # ddZ/dZ
-    Atrix[5, 5] = -drag_C *_rho_A * dZ**2 /_V_A + \
+    Atrix[5, 5] = -drag_C *_rho_A * dZ**2. /_V_A + \
              -drag_C *_rho_A *_V_A
 
     # ddZ/mu
-    Atrix[5, 6] = -Z / r**3 * (1 - (3.0/2.0) * J2 * (R / r)**2 * (5 * (Z / r)**2 - 3))
+    Atrix[5, 6] = -Z / r**3. * (1. - (3. / 2.) * J2 * (R / r)**2. * (5. * (Z / r)**2. - 3.))
 
     # ddZ/J2
-    Atrix[5, 7] = (3.0/2.0) * mu * Z / r**3 * (R / r)**2 * (5.0 * (Z / r)**2 - 3.0)
+    Atrix[5, 7] = (3. / 2.) * mu * Z / r**3. * (R / r)**2. * (5. * (Z / r)**2. - 3.)
 
     # ddZ/Cd
-    Atrix[5, 8] = -(1.0/2.0) * (A / m) *_rho_A *_V_A * dZ
+    Atrix[5, 8] = -(1. / 2.) * (A / m) *_rho_A *_V_A * dZ
 
     return Atrix
 
