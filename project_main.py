@@ -52,6 +52,7 @@ def run_batch(num_iters):
         last_x = run_data[2]
 
     print_latex_state(x_hats)
+    print_latex_cov(run_data[1])
 
 def run_sequential(num_iters):
 
@@ -97,6 +98,7 @@ def run_sequential(num_iters):
         last_x = run_data[2]
 
     print_latex_state(x_hats)
+    print_latex_cov(run_data[1])
 
 if __name__ == '__main__':
 

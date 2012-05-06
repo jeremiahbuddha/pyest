@@ -213,13 +213,43 @@ def print_covariance(P):
                 out += "{0: 2.2f},     ".format(float(P[row,col]/(sqrt(P[row,row]) * sqrt(P[col,col]) )))
             # Highlight variances in blue
             elif row == col:
-                out += b("{0: 2.2e}, ".format(float(P[row,col])))
+                out += "{0: 2.2e}, ".format(float(P[row,col]))
             else:
                 out += "{0: 2.2e}, ".format(float(P[row,col]))
     
     out += "\n"
 
     print out
+
+def print_latex_cov(P):
+    """
+    Pretty-print a matrix() 18x18 covariance.
+
+    """
+    out = ''
+    # Print out header with state variables
+    for var in STATE_VARS:
+        out += " & ${0:9s}$ ".format(var)
+
+    out += '\\\\ \n'
+
+
+    # Print out correlation / covariance matrix    
+    for row in range(18):
+        out += "${0:3s}$ ".format(STATE_VARS[row])
+        for col in range(18):
+            # Print correlations on lower diagnal
+            if col < row:
+                out += " & {0: 2.2f} ".format(float(P[row,col]/(sqrt(P[row,row]) * sqrt(P[col,col]) )))
+            # Highlight variances in blue
+            elif row == col:
+                out += " & {0: 2.2e} ".format(float(P[row,col]))
+            else:
+                out += "& {0: 2.2e} ".format(float(P[row,col]))
+        out += '\\\\ \n'
+
+    print out
+
 
 def plot_covariance_trace(Ps):
 
