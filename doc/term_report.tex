@@ -207,13 +207,17 @@ The package is organized into four sub-modules, depicted in figure blah and desc
 \item[project\_main.py] This is the command line utility that runs the filters.
 \end{description}
 
-\subsection{Obtaining and running \textbf{pyest}}
-
 The major elements of the filter module have been attached as an appendix to this report. The source code in it's entirety is viewable and downloadable online in a github repository at https://github.com/jeremiahbuddha/pyest. 
+
+\subsection{Installing and running \textbf{pyest}}
+
+As previously mentioned, pyest is available for download in a github repository. It is entirely self-contained, so you can download it directly to your computer, and once the dependencies have been installed, run it.
 
 Before executing \textbf{pyest}, you must make sure that a suitable version of Python, along with other dependencies, have been installed on your machine. \textbf{pyest} was built using Python v2.7, and this is the recommended version to run it with. Also, as previously mentioned, the package requires numpy / scipy and matplotlib. An easy way to obtain all the dependencies required to run the package is to download the latest version of EPDFree from Enthought Inc., an excellent distributor of scientific programming toolkits for Python.
 
 It is also necessary to check the pound line in \emph{project\_main.py} to make sure that it is pointing to the correct python executable on your machine. Currently, the line reads \emph{\#! /usr/bin/env python}, but it may need to be changed if, for instance, you install EPDFree, to the correct python binary for that distribution.
+
+Once Python and other dependencies have been installed, you can run the OD filter by running \emph{project\_main.py} via a command line terminal, \emph{project\_main.py filter\_type number\_of\_iters}, where the filter type can be 'batch' or 'sequential' and the number of iterations an integer. For example, to run the batch filter with two iterations, you would use  \emph{project\_main.py batch 2}. This sets the filter running,  and also display plots of the pre / post-fit residuals, and prints the value of $\hat{x}$ for each iteration.
 
 \section{Discussion of Results}
 
@@ -221,10 +225,115 @@ The pyest package has been used to process the project tracking data and obtain 
 
 \subsection{Batch Results}
 
+Figure X and Table X show the results from running the batch filter three times in progression, where the best estimate for one iteration gets fed into the next as the new a priori (with the exception of the a priori covariance, which remained constant for all three iterations). We expect that the linear filter will not be able to precisely lock down the non-linear trajectory after one pass-through of the data. Rather, each subsequent iteration pushes the linear solution closer and closer to the true trajectory until it ``converges" on the best estimate , i.e. the deviation vector stops improving for continued iterations. Table X indeed shows the state parameters converging to values by the third iteration, with the notable exception of the three constant parameters $\mu$, $J_2$ and $C_d$. More on this later. 
+
+An examination of Figure X also shows this convergence in process, and also reveals the mis-match between the linear filter and non-linear dynamics. All three iterations produce progressively tighter prefit / postfit residuals, but there remains a mis-match in all three cases between the prefit and postfit residuals. For instance, the filter was able to lay the postfit residuals for iteration two flat, but when the best-estimate state was reintegrated with full non-linear dynamics it failed to produce the same ``linear" trajectory. 
+
+\begin{table}[htdp]
+\caption{default}
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+ & Iter 0 &  Iter 1 &  Iter 2 \\ 
+ \hline\hline
+$X  $ &  -3.6303e-02 &  3.2641e-01 &  2.0540e-04 \\ 
+$Y  $ &  -2.7411e-01 & -1.4775e-01 & -1.6626e-04 \\ 
+$Z  $ &  -1.8088e-01 & -8.1072e-02 &  2.6146e-05 \\ 
+$dX $ &   4.0935e-02 & -3.1685e-04 & -1.8633e-07 \\ 
+$dY $ &   3.2748e-02 & -3.9307e-05 &  4.7168e-08 \\ 
+$dZ $ &  -1.4753e-02 &  3.3759e-04 &  2.3340e-07 \\ 
+$mu $ &  -9.4634e+06 & -4.2736e+07 & -4.2754e+07 \\ 
+$J_2$ &  -6.5736e-07 & -6.2751e-07 & -6.2749e-07 \\ 
+$C_d$ &   1.4755e-01 &  1.8858e-01 &  1.8863e-01 \\ 
+$X_1$ &   1.8632e-06 & -1.8682e-06 & -8.8246e-10 \\ 
+$Y_1$ &   1.3787e-06 & -1.3824e-06 & -6.5299e-10 \\ 
+$Z_1$ &  -2.5382e-07 &  2.5376e-07 &  3.3327e-10 \\ 
+$X_2$ &  -1.0564e+01 &  5.5455e-01 &  3.7032e-04 \\ 
+$Y_2$ &   9.9834e+00 &  2.0201e-02 & -2.2651e-05 \\ 
+$Z_2$ &   5.7943e+00 &  1.8159e-01 &  2.3245e-04 \\ 
+$X_3$ &  -5.7819e+00 &  7.7237e-01 &  4.8045e-04 \\ 
+$Y_3$ &   2.3444e+00 & -3.2256e-01 & -2.6913e-04 \\ 
+$Z_3$ &   1.5125e+00 &  1.4617e+00 &  1.0141e-03 \\ 
+\hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}%
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=4.5in]{Batch_resids_iter_0.png}
+\includegraphics[width=4.5in]{Batch_resids_iter_1.png}
+\includegraphics[width=4.5in]{Batch_resids_iter_2.png}
+\caption{Batch filter residuals}
+%\label{default}
+\end{center}
+\end{figure}
 
 
 \subsection{Sequential Results}
 
-blah
+Ideally, the sequential algorithm would produce the exact same results as the batch. Numerical errors however prevent this from being realized, as can be seen from the values for $\hat{x}$ given in table X. On the whole, however, the sequential algorithm shows results consistent with the batch filter, including the curious mis-match that was noted above. 
+
+\begin{table}[htdp]
+\caption{default}
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+ & Iter 0 &  Iter 1 &  Iter 2 \\ 
+ \hline\hline
+$X  $ &  6.1051e-02 &  2.2672e-01 &  3.2248e-03 \\ 
+$Y  $ & -4.1556e-01 & -1.9991e-03 & -5.2339e-03 \\ 
+$Z  $ & -4.3756e-02 & -2.2227e-01 &  4.8804e-03 \\ 
+$dX $ &  4.0845e-02 & -2.2473e-04 & -3.3210e-06 \\ 
+$dY $ &  3.2901e-02 & -1.9716e-04 &  5.6818e-06 \\ 
+$dZ $ & -1.4669e-02 &  2.5069e-04 &  3.2446e-06 \\ 
+$mu $ & -7.8421e+06 & -4.2786e+07 & -4.2745e+07 \\ 
+$J_2$ & -6.5433e-07 & -6.2759e-07 & -6.2748e-07 \\ 
+$C_d$ &  1.5426e-01 &  1.8880e-01 &  1.8888e-01 \\ 
+$X_1$ &  1.7756e-06 & -1.7783e-06 & -3.8301e-09 \\ 
+$Y_1$ &  1.3139e-06 & -1.3159e-06 & -2.8341e-09 \\ 
+$Z_1$ & -2.7535e-07 &  2.7530e-07 &  9.6929e-11 \\ 
+$X_2$ & -1.0542e+01 &  5.3208e-01 &  1.1366e-03 \\ 
+$Y_2$ &  9.8811e+00 &  1.2514e-01 & -3.4175e-03 \\ 
+$Z_2$ &  5.8251e+00 &  1.5004e-01 &  1.2359e-03 \\ 
+$X_3$ & -5.7089e+00 &  6.9734e-01 &  3.0054e-03 \\ 
+$Y_3$ &  2.1876e+00 & -1.6167e-01 & -5.5023e-03 \\ 
+$Z_3$ &  1.4904e+00 &  1.4848e+00 & -7.8109e-05 \\ 
+\hline
+\end{tabular}
+\end{center}
+\label{default}
+\end{table}%
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=4.5in]{Sequential_resids_iter_0.png}
+\includegraphics[width=4.5in]{Sequential_resids_iter_1.png}
+\includegraphics[width=4.5in]{Sequential_resids_iter_2.png}
+\caption{Sequential filter residuals}
+%\label{default}
+\end{center}
+\end{figure}
+
+\subsection{Convergence issues}
+
+I have not been able to establish whether the failure in  $\mu$, $J_2$ and $C_d$ to converge is related to the residual mismatch, and whether both of them are a result of an error the codebase or just numerical artifacts of the linear filter. Based on the symptoms, I would say the error, if there is indeed one, is somewhere in the calculation of  $A$. This matrix links the linear model with the non-linear model, and an error here would likely cause this sort of error. This hypothesis is further born out by the results of my test module, which compares the 0th iteration values against the project reference values:
+
+\begin{itemize}
+\item A-matrix (first call) shows excellent agreement with solutions (less than E-12 \% error for all non-zero entries)
+\item Htilda-matrix (first call) shows excellent agreement with solutions (less than E-9 \% error for all non-zero entries)
+\item Integrated position / velocity show excellent agreement with solutions (less than E-7 \% error for t = 0 to 120 seconds)
+\item Integrated state transition matrix showed unusually high errors in $C_d$ term
+\item $H$ values show unusually high errors in $C_d$
+\item $\hat{x}$ showed unusually high errors in $C_d$
+\end{itemize}
+
+The $H$ matrices and $\hat{x}$ are both a function of the state transition matrix, which is itself a function of $A$. However, thorough investigation of the $A$ partials continues to show them exactly matching the partials given in the project solution. Also, introducing an intentional ``small" error in the $A$ matrix tends to produce more noticeable errors in the fit (this is just an ad-hoc test where common coding errors such as sign reversals, bracket misplacement etc are introduced and their effect observed). Thus this issue remains unresolved.
+
+\section{Conclusion}
+
+
+
 
 \end{document}  

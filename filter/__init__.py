@@ -85,7 +85,7 @@ def get_postfit_resids(run_data):
 def plot_resids(iter_num, resids, presids, filter_type):
 
     # Create a figure
-    resid_fig = plt.figure()
+    resid_fig = plt.figure(figsize=(14,8.5))
 
     # ======================================================================
     # Plot prefit resids
@@ -146,7 +146,9 @@ def plot_resids(iter_num, resids, presids, filter_type):
                 xy=(10,-20), xycoords='axes points')
 
     # Show figure
-    resid_fig.show()
+    name = "{0}_resids_iter_{1}".format(filter_type, iter_num)
+    resid_fig.savefig(name)
+    #resid_fig.show()
 
 def print_state(X):
     """
@@ -172,16 +174,16 @@ def print_latex_state(Xs):
     iters.sort()
 
     for num in iters:
-        out += ' Iter {0} & '.format(num)
+        out += ' & Iter {0} '.format(num)
 
-    out += '\\ \n'
+    out += '\\\\ \n'
  
     for coord in range(18):
-        out += "${0}$ & ".format(STATE_VARS[coord])
+        out += "${0}$ ".format(STATE_VARS[coord])
         for num in iters:
             val = float(Xs[num][coord])
-            out += " {0: 2.4e} &".format(val)
-        out += '\\ \n'
+            out += "& {0: 2.4e} ".format(val)
+        out += '\\\\ \n'
 
     print out
 

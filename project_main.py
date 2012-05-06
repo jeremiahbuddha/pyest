@@ -96,6 +96,8 @@ def run_sequential(num_iters):
         last_X = run_data[0]
         last_x = run_data[2]
 
+    print_latex_state(x_hats)
+
 if __name__ == '__main__':
 
     filter_name = sys.argv[1]
